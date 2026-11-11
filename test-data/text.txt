@@ -1,0 +1,12 @@
+Commands:
+  scan <directory>  Scan a directory and collect file statistics
+  help [command]    display help for command
+julia@MacBookAir file-organizer-CLI-task1 % node src/index.js scan ./test-data
+📂 Scanning: ./test-data
+julia@MacBookAir file-organizer-CLI-task1 % node src/index.js scan ./test-data
+📂 Scanning: ./test-data
+{ name: 'copytext.txt', size: 0, modified: 2026-11-11T10:50:26.516Z }
+{ name: 'notes.txt', size: 0, modified: 2026-11-11T10:50:46.830Z }
+{ name: 'text.txt', size: 0, modified: 2026-11-11T10:49:52.063Z }
+Scan statistics: { totalFiles: 3, totalSize: 0 }
+julia@MacBookAir file-organizer-CLI-task1 % 
