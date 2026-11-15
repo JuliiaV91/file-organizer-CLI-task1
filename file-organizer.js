@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { Scanner } from "./lib/scanner.js";
-import { formatSize } from "./lib/utils.js";
+import { formatSize, drawProgressBar } from "./lib/utils.js";
 
 const program = new Command();
 
@@ -16,18 +16,15 @@ program
   .action(async (directory) => {
     const scanner = new Scanner();
 
-    let processedFiles = 0;
-
     // Event: scanning started
     scanner.on("scan-start", (data) => {
       console.log(`📂 Scanning: ${data.directory}`);
     });
 
     // Event: file found
-    scanner.on("file-found", () => {
-      processedFiles++;
 
-      process.stdout.write(`\rFiles processed: ${processedFiles}`);
+    scanner.on("file-found", (file) => {
+      process.stdout.write(`\r${drawProgressBar(file.current, file.total)}`);
     });
 
     // Event: scanning completed
