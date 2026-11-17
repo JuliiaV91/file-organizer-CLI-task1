@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { Scanner } from "./lib/scanner.js";
 import { DuplicateFinder } from "./lib/duplicates.js";
+import { Organizer } from "./lib/organizer.js";
 
 import { formatSize, drawProgressBar, handleError } from "./lib/utils.js";
 
@@ -140,6 +141,57 @@ program
       await finder.findDuplicates(directory);
     } catch {
       // Error already handled by the event listener
+    }
+  });
+
+// ORGANIZE COMMAND
+program
+  .command("organize")
+  .description("Copy files into folders based on their categories")
+  .argument("<directory>", "Source directory")
+  .requiredOption("-o, --output <directory>", "Output directory")
+  .action(async (directory, options) => {
+    const organizer = new Organizer();
+
+    console.log(`📦 Organizing: ${directory}`);
+    console.log(`Target: ${options.output}`);
+
+    organizer.on("copy-start", () => {});
+
+    organizer.on("copy-complete", (file) => {
+      process.stdout.write(`\r${drawProgressBar(file.current, file.total)}`);
+    });
+
+    organizer.on("copy-error", (error) => {
+      handleError(error, directory);
+    });
+
+    try {
+      console.log("\nCreating folders...");
+      console.log("Copying files...");
+
+      const results = await organizer.organize(directory, options.output);
+
+      console.log("\n\n✅ Organization complete!");
+      console.log("\nSummary:");
+
+      for (const [category, count] of Object.entries(results.summary)) {
+        console.log(
+          `  ${category}: ${count} files → ${options.output}/${category}/`
+        );
+      }
+
+      console.log(
+        `\nTotal copied: ${results.totalCopied} files (${formatSize(
+          results.totalSize
+        )})`
+      );
+    } catch (error) {
+      // Copy errors are handled by the event listener.
+      // Other errors are handled here.
+      if (process.exitCode !== 1) {
+        handleError(error, directory);
+      }
     }
   });
 
