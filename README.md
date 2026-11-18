@@ -1,6 +1,6 @@
 # File Organizer CLI
 
-File Organizer CLI is a command-line application built with Node.js for analyzing, finding duplicates, organizing, and cleaning up files.
+File Organizer CLI is a command-line application built with Node.js for analyzing files, finding duplicates, organizing files by category, and cleaning up old files.
 
 The application supports four commands:
 
@@ -24,7 +24,7 @@ The application supports four commands:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/JuliiaV91/file-organizer-CLI-task1
+git clone https://github.com/JuliiaV91/file-organizer-CLI-task1.git
 cd file-organizer-CLI-task1
 ```
 
@@ -40,11 +40,43 @@ npm install
 
 ### 3. Run the application
 
+To display all available commands:
+
 ```bash
 node file-organizer.js --help
 ```
 
-This command displays all available commands.
+You can also use:
+
+```bash
+npm start -- --help
+```
+
+## NPM Scripts
+
+The project provides npm scripts for all four commands.
+
+| Command           | Example                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| Scan              | `npm run scan -- ./test-data`                              |
+| Duplicates        | `npm run duplicates -- ./test-data`                        |
+| Organize          | `npm run organize -- ./test-data -o ./organized`           |
+| Cleanup (dry run) | `npm run cleanup -- ./organized --older-than 90`           |
+| Cleanup (delete)  | `npm run cleanup -- ./organized --older-than 90 --confirm` |
+
+The `--` separator passes the following arguments directly to the Node.js script.
+
+For example:
+
+```bash
+npm run scan -- ./test-data
+```
+
+is equivalent to:
+
+```bash
+node file-organizer.js scan ./test-data
+```
 
 ## Commands
 
@@ -74,6 +106,12 @@ node file-organizer.js scan <directory>
 node file-organizer.js scan ./test-data
 ```
 
+Or using npm:
+
+```bash
+npm run scan -- ./test-data
+```
+
 **Arguments:**
 
 - `<directory>` — path to the directory to scan.
@@ -97,6 +135,15 @@ File Age:
   Last 7 days: 4 files
   Last 30 days: 4 files
   Older than 90: 0 files
+
+Largest Files:
+  ./test-data/text.txt — 1.00 KB
+  ./test-data/copytext.txt — 0.20 KB
+  ./test-data/foto.png — 0.05 KB
+
+Oldest File:
+  ./test-data/text.txt
+  Modified: 11/10/2026
 
 ✅ Scan completed! Found 4 files.
 ```
@@ -128,6 +175,12 @@ node file-organizer.js duplicates <directory>
 
 ```bash
 node file-organizer.js duplicates ./test-data
+```
+
+Or using npm:
+
+```bash
+npm run duplicates -- ./test-data
 ```
 
 **Arguments:**
@@ -189,6 +242,12 @@ You can also use the short option:
 
 ```bash
 node file-organizer.js organize ./test-data -o ./organized
+```
+
+Or using npm:
+
+```bash
+npm run organize -- ./test-data -o ./organized
 ```
 
 **Arguments and options:**
@@ -253,6 +312,12 @@ node file-organizer.js cleanup <directory> --older-than <days>
 node file-organizer.js cleanup ./organized --older-than 90
 ```
 
+Or using npm:
+
+```bash
+npm run cleanup -- ./organized --older-than 90
+```
+
 This command finds files modified more than 90 days ago.
 
 **Example output:**
@@ -289,6 +354,12 @@ To delete old files, add the `--confirm` option.
 
 ```bash
 node file-organizer.js cleanup ./organized --older-than 90 --confirm
+```
+
+Or using npm:
+
+```bash
+npm run cleanup -- ./organized --older-than 90 --confirm
 ```
 
 **Example output:**
