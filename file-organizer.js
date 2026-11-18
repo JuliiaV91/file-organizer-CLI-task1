@@ -1,7 +1,10 @@
 import { Command } from "commander";
+import path from "node:path";
+
 import { Scanner } from "./lib/scanner.js";
 import { DuplicateFinder } from "./lib/duplicates.js";
 import { Organizer } from "./lib/organizer.js";
+import { Cleanup } from "./lib/cleanup.js";
 
 import { formatSize, drawProgressBar, handleError } from "./lib/utils.js";
 
@@ -156,8 +159,6 @@ program
     console.log(`📦 Organizing: ${directory}`);
     console.log(`Target: ${options.output}`);
 
-    organizer.on("copy-start", () => {});
-
     organizer.on("copy-complete", (file) => {
       process.stdout.write(`\r${drawProgressBar(file.current, file.total)}`);
     });
@@ -187,11 +188,104 @@ program
         )})`
       );
     } catch (error) {
-      // Copy errors are handled by the event listener.
-      // Other errors are handled here.
       if (process.exitCode !== 1) {
         handleError(error, directory);
       }
+    }
+  });
+
+// CLEANUP COMMAND
+program
+  .command("cleanup")
+  .description("Find and optionally delete old files")
+  .argument("<directory>", "Directory to clean")
+  .requiredOption(
+    "--older-than <days>",
+    "Find files older than the specified number of days"
+  )
+  .option("--confirm", "Actually delete the files")
+  .action(async (directory, options) => {
+    const cleanup = new Cleanup();
+
+    const olderThan = Number(options.olderThan);
+
+    if (!Number.isFinite(olderThan) || olderThan < 0) {
+      console.error("❌ Error: --older-than must be a non-negative number");
+      process.exitCode = 1;
+      return;
+    }
+
+    console.log(`🧹 Cleanup: ${directory}`);
+    console.log(`Looking for files older than ${olderThan} days...`);
+
+    cleanup.on("file-found", () => {
+      // Old file found; results will be displayed together
+    });
+
+    cleanup.on("file-deleted", (file) => {
+      process.stdout.write(`\r${drawProgressBar(file.current, file.total)}`);
+    });
+
+    cleanup.on("cleanup-complete", (results) => {
+      if (options.confirm) {
+        console.log("\n\n✅ Cleanup complete!");
+        console.log(
+          `Deleted: ${results.deletedFiles} files (${formatSize(
+            results.freedSpace
+          )} freed)`
+        );
+      }
+    });
+
+    cleanup.on("error", (error) => {
+      handleError(error, directory);
+    });
+
+    try {
+      // First: find old files without deleting anything
+      const preview = await cleanup.cleanup(directory, olderThan, false);
+
+      console.log(`\nFound ${preview.totalFiles} files to delete:`);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      for (const file of preview.files) {
+        console.log(`\n${path.basename(file.path)}`);
+        console.log(`  Path: ${file.path}`);
+        console.log(`  Size: ${formatSize(file.size)}`);
+        console.log(
+          `  Modified: ${Math.floor(file.daysOld)} days ago (${file.modified
+            .toISOString()
+            .slice(0, 10)})`
+        );
+      }
+
+      console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(
+        `Total: ${preview.totalFiles} files (${formatSize(preview.totalSize)})`
+      );
+
+      if (!options.confirm) {
+        console.log("\n⚠️ DRY RUN MODE: No files were deleted.");
+        console.log("To actually delete these files, run with --confirm flag.");
+        return;
+      }
+
+      if (preview.totalFiles === 0) {
+        console.log("\nNo files to delete.");
+        return;
+      }
+
+      console.log(
+        `\n⚠️ DELETING ${preview.totalFiles} files (${formatSize(
+          preview.totalSize
+        )}). This action cannot be undone!`
+      );
+      console.log("\nDeleting...");
+
+      // Second: delete old files
+      await cleanup.cleanup(directory, olderThan, true);
+    } catch {
+      // Error already handled by the event listener
     }
   });
 
